@@ -52,3 +52,11 @@ qmake
 make clean
 make
 cp $CURDIR/bin/cyusb_linux /usr/local/bin
+
+
+# Build 'download_fx3' as well, for command-line firmware upload.
+pushd $CURDIR/src > /dev/null
+make -B
+file download_fx3
+popd  > /dev/null
+
