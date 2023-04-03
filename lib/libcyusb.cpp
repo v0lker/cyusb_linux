@@ -79,14 +79,14 @@ isempty (
  */
 static void
 parse_configfile (
-		void)
+		char const *cfg_file)
 {
 	FILE *inp;
 	char buf[MAX_CFG_LINE_LENGTH];
 	char *cp1, *cp2, *cp3;
 	int i;
 
-	inp = fopen("/etc/cyusb.conf", "r");
+	inp = fopen(cfg_file, "r");
 	if (inp == NULL)
 		return;
 
@@ -133,7 +133,7 @@ parse_configfile (
 			}
 		}
 		else {
-			printf("Error in config file /etc/cyusb.conf: %s \n",buf);
+			printf("Error in config file %s: %s \n", cfg_file, buf);
 			exit(1);
 		}
 	}
@@ -151,12 +151,8 @@ device_is_of_interest (
 	int i;
 	int found = 0;
 	struct libusb_device_descriptor desc;
-	int vid;
-	int pid;
 
 	libusb_get_device_descriptor(d, &desc);
-	vid = desc.idProduct;
-	pid = desc.idProduct;
 
 	for ( i = 0; i < maxdevices; ++i ) {
 		if ( (vpd[i].vid == desc.idVendor) && (vpd[i].pid == desc.idProduct) ) {
@@ -240,19 +236,21 @@ renumerate (
    Opens handles to all USB devices of interest, and returns their count.
  */
 int cyusb_open (
-		void)
+		char const *cfg_file)
 {
 	int fd1;
 	int r;
 
-	fd1 = open("/etc/cyusb.conf", O_RDONLY);
+	if ( !cfg_file ) cfg_file = "/etc/cyusb.conf";
+
+	fd1 = open(cfg_file, O_RDONLY);
 	if ( fd1 < 0 ) {
-		printf("/etc/cyusb.conf file not found. Exiting\n");
+		printf("could not open config >%s<, exiting...\n", cfg_file);
 		return -ENOENT;
 	}
 	else {
 		close(fd1);
-		parse_configfile();	/* Parse the file and store information inside exported data structures */
+		parse_configfile(cfg_file);	/* Parse the file and store information inside exported data structures */
 	}
 
 	r = libusb_init(NULL);
@@ -264,6 +262,15 @@ int cyusb_open (
 	/* Get list of USB devices of interest. */
 	r = renumerate();
 	return r;
+}
+
+/* cyusb_open:
+   Opens handles to all USB devices of interest, and returns their count.
+ */
+int cyusb_open (
+		void)
+{
+	return cyusb_open(NULL);
 }
 
 /* cyusb_open:
