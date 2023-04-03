@@ -69,6 +69,16 @@ extern void cyusb_error(int err);
 extern int cyusb_open(void);
 
 /*******************************************************************************************
+  Prototype    : int cyusb_open(char const *);
+  Description  : This initializes the underlying libusb library, populates the cydev[]
+                 array, and returns the number of devices of interest detected. A
+                 'device of interest' is a device which appears in the /etc/cyusb.conf file.
+  Parameters   : string with path to config file
+  Return Value : Returns an integer, equal to number of devices of interest detected.
+ *******************************************************************************************/
+extern int cyusb_open(char const *cfg_file);
+
+/*******************************************************************************************
   Prototype    : int cyusb_open(unsigned short vid, unsigned short pid);
   Description  : This is an overloaded function that populates the cydev[] array with
                  just one device that matches the provided vendor ID and Product ID.

@@ -550,12 +550,13 @@ print_usage_info (
 	printf ("%s: FX3 firmware programmer\n\n", arg0);
 	printf ("Usage:\n");
 	printf ("\t%s -h: Print this help message\n\n", arg0);
-	printf ("\t%s -t <target> -i <img filename>: Program firmware binary from <img filename>\n", arg0);
+	printf ("\t%s -t <target> [-c <cfg file>] -i <img filename>: Program firmware binary from <img filename>\n", arg0);
 	printf ("\t\tto <target>\n");
 	printf ("\t\t\twhere <target> is one of\n");
 	printf ("\t\t\t\t\"RAM\": Program to FX3 RAM\n");
 	printf ("\t\t\t\t\"I2C\": Program to I2C EEPROM\n");
 	printf ("\t\t\t\t\"SPI\": Program to SPI FLASH\n");
+	printf ("\t\t<cfg file>: path to config file (instead of default)\n");
 	printf ("\n\n");
 }
 
@@ -566,6 +567,7 @@ int main (
 	cyusb_handle *h;
 	char         *filename = NULL;
 	char         *tgt_str  = NULL;
+	char         *cfg_file = NULL;
 	fx3_fw_target tgt = FW_TARGET_NONE;
 	int r, i;
 
@@ -574,34 +576,34 @@ int main (
 		if ((strcasecmp (argv[i], "-h") == 0) || (strcasecmp (argv[i], "--help") == 0)) {
 			print_usage_info (argv[0]);
 			return 0;
-		} else {
-			if ((strcasecmp (argv[i], "-t") == 0) || (strcasecmp (argv[i], "--target") == 0)) {
-				if (argc > (i + 1)) {
-					tgt_str = argv[i + 1];
-					if (strcasecmp (argv[i + 1], "ram") == 0)
-						tgt = FW_TARGET_RAM;
-					if (strcasecmp (argv[i + 1], "i2c") == 0)
-						tgt = FW_TARGET_I2C;
-					if (strcasecmp (argv[i + 1], "spi") == 0)
-						tgt = FW_TARGET_SPI;
-					if (tgt == FW_TARGET_NONE) {
-						fprintf (stderr, "Error: Unknown target %s\n", argv[i + 1]);
-						print_usage_info (argv[0]);
-						return -EINVAL;
-					}
-				}
-				i++;
-			} else {
-				if ((strcmp (argv[i], "-i") == 0) || (strcmp (argv[i], "--image") == 0)) {
-					if (argc > (i + 1))
-						filename = argv[i + 1];
-					i++;
-				} else {
-					fprintf (stderr, "Error: Unknown parameter %s\n", argv[i]);
+		} else if ((strcasecmp (argv[i], "-t") == 0) || (strcasecmp (argv[i], "--target") == 0)) {
+			if (argc > (i + 1)) {
+				tgt_str = argv[i + 1];
+				if (strcasecmp (argv[i + 1], "ram") == 0)
+					tgt = FW_TARGET_RAM;
+				if (strcasecmp (argv[i + 1], "i2c") == 0)
+					tgt = FW_TARGET_I2C;
+				if (strcasecmp (argv[i + 1], "spi") == 0)
+					tgt = FW_TARGET_SPI;
+				if (tgt == FW_TARGET_NONE) {
+					fprintf (stderr, "Error: Unknown target %s\n", argv[i + 1]);
 					print_usage_info (argv[0]);
 					return -EINVAL;
 				}
 			}
+			i++;
+		} else if ((strcmp (argv[i], "-i") == 0) || (strcmp (argv[i], "--image") == 0)) {
+			if (argc > (i + 1))
+				filename = argv[i + 1];
+			i++;
+		} else if ((strcmp (argv[i], "-c") == 0) || (strcmp (argv[i], "--config") == 0)) {
+			if (argc > (i + 1))
+				cfg_file = argv[i + 1];
+			i++;
+		} else {
+			fprintf (stderr, "Error: Unknown parameter %s\n", argv[i]);
+			print_usage_info (argv[0]);
+			return -EINVAL;
 		}
 	}
 	if ((filename == NULL) || (tgt == FW_TARGET_NONE)) {
@@ -610,7 +612,7 @@ int main (
 		return -EINVAL;
 	}
 
-	r = cyusb_open ();
+	r = cyusb_open (cfg_file);
 	if (r < 0) {
 	     fprintf (stderr, "Error opening library\n");
 	     return -ENODEV;
